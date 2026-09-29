@@ -12,7 +12,7 @@ export class AmplifyHostingStack extends Stack {
         const amplifyApp = new App(this, 'TodoWebApp', {
             sourceCodeProvider: new GitHubSourceCodeProvider({
                 owner: 'lmmendivil',
-                repository: 'todo-app-infra',
+                repository: 'todoApp',
                 oauthToken: SecretValue.secretsManager('github-token'),
             }),
             environmentVariables: {
