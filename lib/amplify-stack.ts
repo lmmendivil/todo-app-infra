@@ -2,10 +2,15 @@ import { CfnOutput, SecretValue, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { App, GitHubSourceCodeProvider, RedirectStatus } from '@aws-cdk/aws-amplify-alpha';
 
-interface AmplifyStackProps extends StackProps { }
+interface AmplifyStackProps extends StackProps { 
+    readonly userPoolId: string;
+    readonly userPoolClientId:string ;
+    readonly identityPoolId: string;
+    
+}
 
 export class AmplifyHostingStack extends Stack {
-    constructor(scope: Construct, id: string, props?: AmplifyStackProps) {
+    constructor(scope: Construct, id: string, props: AmplifyStackProps) {
         super(scope, id, props);
 
         // Create the Amplify application
@@ -17,7 +22,10 @@ export class AmplifyHostingStack extends Stack {
             }),
             environmentVariables: {
                 REGION: this.region,
-                IS_MOCK: 'true'
+                IS_MOCK: 'true',
+                USER_POOL_ID: props.userPoolId,
+                USER_POOL_CLIENT_ID: props.userPoolClientId,
+                IDENTITY_POOL_ID: props?.identityPoolId,
             },
         });
 
