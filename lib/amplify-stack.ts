@@ -4,7 +4,7 @@ import { App, GitHubSourceCodeProvider, RedirectStatus } from '@aws-cdk/aws-ampl
 
 interface AmplifyStackProps extends StackProps { 
     readonly userPoolId: string;
-    readonly userPoolClientId:string ;
+    readonly userPoolClientId:string;
     readonly identityPoolId: string;
     
 }
