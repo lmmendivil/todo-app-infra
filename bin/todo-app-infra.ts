@@ -15,5 +15,7 @@ const amplifyStack = new AmplifyHostingStack(app, 'TodoAppAmplifyHostingStack', 
     userPoolClientId: cognitoStack.userPoolClientId.value,
     identityPoolId: cognitoStack.identityPoolId.value,
     serverUrl: backendStack.apiUrl.value
+    userPoolArn: cognitoStack.userPoolArn.value
+
     
 });

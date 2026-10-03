@@ -1,5 +1,14 @@
 const { v4: uuidv4 } = require('uuid');
 
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient, QueryCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
+
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
+
+const TABE_NAME = process.env.TABLE_NAME;
+
+
 export const handler = async (event: any = {}): Promise<any> => {
     console.log('Request received:', event);
 

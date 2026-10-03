@@ -1,9 +1,11 @@
-import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import path = require("path");
 import { Construct } from "constructs";
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import { AttributeType, BillingMode, Table } from "aws-cdk-lib/aws-dynamodb";
+import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 
 
 
@@ -12,6 +14,27 @@ export class BackendStack extends Stack {
 
     constructor(scope: Construct, id: string, props?: StackProps) {
         super(scope, id, props);
+
+        //Dynamodb
+
+         /* Item schema:
+        todo: {
+            userId: string,
+            createdAt: string,
+            todoId: string,
+            title: string,
+            completed: boolean
+        }
+        */
+
+        const todoTable = new Table(this, 'TodoWebAppTableDynamoDB',{
+                partitionKey: { name: 'userId', type: AttributeType.STRING },
+                sortKey:      { name: 'createdAt', type: AttributeType.STRING },
+                billingMode:BillingMode.PAY_PER_REQUEST, 
+                removalPolicy: RemovalPolicy.DESTROY
+              })
+        
+
 
 
         // Backend function
@@ -30,10 +53,21 @@ export class BackendStack extends Stack {
             },
 
             environment: {
-                //Add environment variables if needed
+                TABLE_NAME: todoTable.tableName
             }
         });
 
+         // Give permissions to the function to access the dynamodb table
+            backendFunction.addToRolePolicy(new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: [
+            'dynamodb:PutItem',
+            'dynamodb:Query'
+            ],
+            resources: [
+                todoTable.tableArn
+            ]
+        }));
 
 
     // Create API Gateway
