@@ -6,7 +6,7 @@ const { DynamoDBDocumentClient, QueryCommand, PutCommand } = require("@aws-sdk/l
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-const TABE_NAME = process.env.TABLE_NAME;
+const TABLE_NAME = process.env.TABLE_NAME;
 
 
 export const handler = async (event: any = {}): Promise<any> => {
@@ -51,25 +51,27 @@ export const handler = async (event: any = {}): Promise<any> => {
     async function getAllItems(id: string) {
     console.log('get all items');
      
-     // FAKE IT
-     const fakeItems = [
-         {
-             userId: id,
-             createdAt: Date.now().toString(),
-             todoId: '123',
-             title: 'Buy milk',
-             completed: false
-         },
-         {
-             userId: id,
-             createdAt: Date.now().toString(),
-             todoId: '345',
-             title: 'Buy eggs',
-             completed: false
-         }
-     ]
-      return createResponse(200, fakeItems)
-    }
+     //Get all items
+    const params = {
+        TableName: TABLE_NAME,
+        KeyConditionExpression: 'userId = :userId',
+        ExpressionAttributeValues: {
+          ':userId': id
+        },
+    };
+     console.log(params);
+ 
+        const getCommand = new QueryCommand(params);
+        const getResponse = await docClient.send(getCommand);
+
+        if (!getResponse.Items) {
+
+        return createResponse(404, 'Item not found')
+        }
+        return createResponse(200, getResponse.Items)
+        console.log(getResponse.Items);
+        
+  }
 
 
 
