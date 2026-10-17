@@ -1,12 +1,15 @@
+import { DeploymentLifecycleLambdaTarget } from "aws-cdk-lib/aws-ecs";
+
 const { v4: uuidv4 } = require('uuid');
 
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, QueryCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
+const { DynamoDBDocumentClient, QueryCommand, PutCommand, DeleteCommand } = require("@aws-sdk/lib-dynamodb");
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
 const TABLE_NAME = process.env.TABLE_NAME;
+const INDEX_NAME = process.env.INDEX_NAME;
 
 
 export const handler = async (event: any = {}): Promise<any> => {
@@ -23,19 +26,27 @@ export const handler = async (event: any = {}): Promise<any> => {
          const userId = 'MR_FAKE';
 
          switch (httpMethod) {
+
             case 'GET':
                 console.log('GET all TODOs');
                 if (path === '/todos') {
                     return getAllItems(userId);
                 }
+
+
             case 'POST':
                 console.log('POST a new TODO');
                 if (path === '/todos') {
                     const body = JSON.parse(event.body);
                     return createNewItem(body.title, userId);
                 }
+
+
             case 'DELETE':
-            // TO IMPLEMENT
+            console.log('DELETE an existing TODO');
+            return deleteItem(event.pathParameters.id)
+
+
             case 'PATCH':
             // TO IMPLEMENT
             default:
@@ -78,29 +89,96 @@ export const handler = async (event: any = {}): Promise<any> => {
     async function createNewItem(title: string, userId: string) {
     console.log('create new item');
   
-    const newItem = {
-      userId: userId,
-      createdAt: Date.now().toString(),
-      todoId: uuidv4(),
-      title: title,
-      completed: false
-    }
+        const newItem = {
+        userId: userId,
+        createdAt: Date.now().toString(),
+        todoId: uuidv4(),
+        title: title,
+        completed: false
+        }
+    
+        const params = {
+            TableName: TABLE_NAME,
+            Item: {
+                userId: newItem.userId,
+                createdAt: newItem.createdAt,
+                todoId: newItem.todoId,
+                title: newItem.title,
+                completed: newItem.completed    
+            }
+        };
+
+    console.log(params);
+    const putCommand = new PutCommand(params);
+    await docClient.send(putCommand);
   
-    // FAKE IT
-  
-    return createResponse(200, newItem)
-    }
-
-
-
-    function createResponse(statusCode: number, body: any) {
-    console.log('create response');
-    console.log(body)
-    return {
-      statusCode: statusCode,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body)
-    }
+    return createResponse(200, newItem);
 }
+
+
+
+    async function getItemFromGSI(todoid: string){
+        console.log('Get item from GSI');
+
+        const queryParams = {
+            TableName: TABLE_NAME,
+            IndexName: INDEX_NAME,
+            KeyConditionExpression: 'todoId = :todoId',
+            ExpressionAttributeValues: {
+                ':todoId': todoid
+            }
+        };
+
+        console.log(queryParams);
+        const queryCommand = new QueryCommand(queryParams);
+        const queryResponse = await docClient.send(queryCommand);
+
+        console.log(queryResponse);
+
+        if(!queryResponse.Items) {
+            return createResponse(404, 'Item not found')
+        }
+
+        return queryResponse.items[0]
+    }
+
+
+
+    async function deleteItem(todoId: string) {
+        console.log('delete item');
+
+        // First we find this item on the GSI
+        const item = await getItemFromGSI(todoId);
+
+        const itemKey = {
+             userId: item.userId,
+             createdAt: item.createdAt
+            }
+
+        // Then we delete the item
+        const deleteParams = {
+            TableName: TABLE_NAME,
+            Key: itemKey
+        };
+
+        console.log(deleteParams);
+
+        const deleteCommand = new DeleteCommand(deleteParams);
+        await docClient.send(deleteCommand);
+
+        return createResponse(200, itemKey)
+        }
+
+          
+
+        async function createResponse(statusCode: number, body: any) {
+        console.log('create response');
+        console.log(body)
+        return {
+        statusCode: statusCode,
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body)
+        }
+    }
