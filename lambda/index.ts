@@ -63,14 +63,14 @@ export const handler = async (event: any = {}): Promise<any> => {
     console.log('get all items');
      
      //Get all items
-    const params = {
+        const params = {
         TableName: TABLE_NAME,
         KeyConditionExpression: 'userId = :userId',
         ExpressionAttributeValues: {
           ':userId': id
         },
-    };
-     console.log(params);
+        };
+        console.log(params);
  
         const getCommand = new QueryCommand(params);
         const getResponse = await docClient.send(getCommand);
@@ -139,7 +139,7 @@ export const handler = async (event: any = {}): Promise<any> => {
             return createResponse(404, 'Item not found')
         }
 
-        return queryResponse.items[0]
+        return queryResponse.Items[0]
     }
 
 

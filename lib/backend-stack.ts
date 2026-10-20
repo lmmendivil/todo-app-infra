@@ -48,7 +48,7 @@ export class BackendStack extends Stack {
 
 
         // Backend function
-        const backendFunction = new NodejsFunction(this, 'TodoWebAppBackendFunction', {
+            const backendFunction = new NodejsFunction(this, 'TodoWebAppBackendFunction', {
             entry: path.join(__dirname, '../lambda/index.ts'), 
             handler: 'handler',
             runtime: lambda.Runtime.NODEJS_22_X,
